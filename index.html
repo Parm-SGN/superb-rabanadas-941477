@@ -1,0 +1,1629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGNCCS - Live Daily Collection Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF and AutoTable libraries for high-fidelity report generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            900: '#14532d',
+                        },
+                        sgn: {
+                            gold: '#d97706',
+                            goldlight: '#fef3c7',
+                            navy: '#0f172a',
+                            navylight: '#f1f5f9',
+                            accent: '#1e3a8a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f8fafc;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px) scale(0.99); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col font-sans">
+
+    <!-- Custom Toast Notification System -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full"></div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-container" class="flex-1 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-8 max-w-md w-full animate-fade-in">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-sgn-navylight text-sgn-navy mb-4 border border-slate-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-sgn-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-black text-slate-900 tracking-tight">SGNCCS</h1>
+                <p class="text-xs text-slate-500 font-semibold tracking-wider uppercase mt-1">Sri Guru Nanak Cooperative Credit Society</p>
+                <div class="h-1 w-12 bg-sgn-gold mx-auto mt-4 rounded-full"></div>
+            </div>
+
+            <!-- Database connection alert indicator -->
+            <div id="db-status-login-badge" class="mb-5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between">
+                <span class="text-slate-500 font-semibold">Database Sync:</span>
+                <span id="db-status-label" class="font-bold text-slate-700 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-slate-400"></span> Local Cache Only
+                </span>
+            </div>
+
+            <form id="login-form" class="space-y-5">
+                <div>
+                    <label for="login-username" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">User ID / Username</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </span>
+                        <input type="text" id="login-username" required placeholder="Enter Username"
+                            class="w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-850 transition-all bg-slate-50 hover:bg-slate-100/50">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="login-password" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Password</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                        </span>
+                        <input type="password" id="login-password" required placeholder="Enter Password"
+                            class="w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-850 transition-all bg-slate-50 hover:bg-slate-100/50">
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-sgn-navy hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-slate-900/10 hover:shadow-xl hover:shadow-slate-900/20 active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+                    Verify & Sync Session
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- AGENT DAY-OPEN CONSTRAINTS OVERLAY -->
+    <div id="day-open-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in border border-slate-100">
+            <div class="text-center">
+                <div class="w-14 h-14 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4 border border-amber-100">
+                    <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-1">Open Live Collection Session</h3>
+                <p class="text-slate-500 text-sm mb-6">Verify parameters to initialize daily records.</p>
+            </div>
+
+            <div class="space-y-4">
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center text-sm">
+                    <span class="text-slate-500 font-semibold">Your Agent Code:</span>
+                    <span id="agent-modal-code-badge" class="font-extrabold bg-sgn-goldlight text-sgn-gold px-2.5 py-1 rounded-lg border border-amber-200">AG01</span>
+                </div>
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center text-sm">
+                    <span class="text-slate-500 font-semibold">Collection Date:</span>
+                    <span id="agent-modal-date-badge" class="font-extrabold text-slate-800">18-05-2026</span>
+                </div>
+                <div class="p-3.5 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex gap-3 leading-relaxed">
+                    <svg class="h-5 w-5 shrink-0 text-amber-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <span><strong>Day-Entry Lock:</strong> You are opening the ledger for TODAY's date. Recording or modifying retrospective dates is restricted by administrative protocol.</span>
+                </div>
+                <button id="btn-confirm-open-day" class="w-full bg-sgn-accent hover:bg-blue-850 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-900/15 transition-all">
+                    Authorize & Open Day
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE CLOUD SETUP MODAL (FOR DEPLOYMENTS WITHOUT BUILD ENVIRONMENT VARIABLES) -->
+    <div id="db-setup-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-fade-in border border-slate-100">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b">
+                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-sgn-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Multi-Device Live Database Setup
+                </h3>
+                <button id="btn-close-db-modal" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+            </div>
+            <p class="text-slate-500 text-xs mb-4">Paste your Firebase Project Web Configuration JSON block below to instantly link multiple devices globally across Netlify deployments.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="db-config-input" class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Firebase Configuration Object</label>
+                    <textarea id="db-config-input" rows="8" placeholder='{&#10;  "apiKey": "...",&#10;  "authDomain": "...",&#10;  "projectId": "...",&#10;  "storageBucket": "...",&#10;  "messagingSenderId": "...",&#10;  "appId": "..."&#10;}' class="w-full p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent font-mono text-xs bg-slate-50"></textarea>
+                </div>
+
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 leading-relaxed">
+                    <strong>Note:</strong> Configuration parameters are stored securely inside your client-side browser space. Re-entering this on new device browsers links them instantly to the same shared directory.
+                </div>
+
+                <div class="flex justify-end gap-3">
+                    <button id="btn-clear-db-config" class="px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 border border-transparent rounded-xl transition-all">
+                        Reset Connection
+                    </button>
+                    <button id="btn-save-db-config" class="bg-sgn-accent hover:bg-blue-850 text-white font-bold px-5 py-2 rounded-xl text-xs transition-all">
+                        Initialize Live Cloud Sync
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCREEN (HIDDEN BY DEFAULT) -->
+    <div id="main-app" class="hidden flex-1 flex flex-col">
+        <!-- HEADER -->
+        <header class="bg-sgn-navy text-white shadow-xl sticky top-0 z-20 border-b border-slate-800">
+            <div class="max-w-6xl mx-auto px-4 py-3.5 flex flex-wrap justify-between items-center gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="bg-slate-800 p-2.5 rounded-xl border border-slate-700 shadow-inner">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-2xl font-black tracking-tight text-white uppercase">SGNCCS</h1>
+                            <span id="header-sync-status" class="text-[10px] bg-slate-500 text-slate-150 font-black px-2 py-0.5 rounded tracking-wider uppercase flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-slate-100"></span>
+                                Local Cache
+                            </span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Sri Guru Nanak Cooperative Credit Society</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <div class="text-right hidden sm:block">
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Operator Profile</div>
+                        <div class="text-sm font-bold flex items-center gap-2 text-white mt-0.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse border border-emerald-500/50"></span>
+                            <span id="display-user-role" class="text-slate-300">Role</span>: <span id="display-user-name" class="text-amber-500 font-extrabold">User</span>
+                            <span id="display-agent-code-pill" class="hidden text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded font-mono font-bold ml-1">AG01</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Admin database parameters configuration trigger -->
+                    <button id="btn-trigger-db-config" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-2.5 rounded-xl border border-slate-750 transition-all flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        </svg>
+                        Cloud Link
+                    </button>
+
+                    <button id="btn-logout" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-lg shadow-red-500/15 transition-all flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- SUB HEADER NAVIGATION (ADMIN ONLY) -->
+        <div id="admin-navbar" class="bg-white border-b border-slate-200 px-4 py-2 hidden shadow-sm">
+            <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4">
+                <div class="flex gap-4">
+                    <button id="tab-collections" class="text-sm font-bold text-slate-800 border-b-2 border-sgn-accent px-2 py-2 flex items-center gap-2 transition-all">
+                        <svg class="h-4.5 w-4.5 text-sgn-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Collections Registry
+                    </button>
+                    <button id="tab-users" class="text-sm font-semibold text-slate-500 hover:text-slate-800 border-b-2 border-transparent px-2 py-2 flex items-center gap-2 transition-all">
+                        <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        Manage Collectors (Admin)
+                    </button>
+                </div>
+                <!-- Production Backup tools -->
+                <div class="flex items-center gap-2 py-1">
+                    <button id="btn-export-backup" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg border border-slate-200 transition-all flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Export JSON Backup
+                    </button>
+                    <label for="import-backup-file" class="cursor-pointer text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg border border-slate-200 transition-all flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Import Backup
+                    </label>
+                    <input type="file" id="import-backup-file" class="hidden" accept=".json">
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN GRID CONTENT -->
+        <main class="flex-1 flex flex-col md:flex-row max-w-6xl w-full mx-auto p-4 gap-6 overflow-hidden">
+            
+            <!-- VIEW 1: COLLECTIONS SYSTEM (FORM + LIST) -->
+            <div id="view-collections-system" class="flex-1 flex flex-col md:flex-row gap-6 w-full h-full">
+                
+                <!-- Left Column: Input Form & Grand Summary -->
+                <section class="w-full md:w-[360px] flex flex-col gap-4 shrink-0 overflow-y-auto pb-4">
+                    
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <div class="flex items-center justify-between mb-4 border-b pb-3">
+                            <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Record Collection</h2>
+                            <span id="agent-active-badge" class="text-[10px] font-black bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-150">SESSION ACTIVE</span>
+                        </div>
+
+                        <form id="collection-form" class="space-y-4">
+                            <!-- Date Selector -->
+                            <div>
+                                <label for="entry-date" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Collection Date</label>
+                                <input type="date" id="entry-date" required
+                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-800 font-semibold transition-colors bg-slate-50">
+                                <p id="agent-date-warning" class="text-[10px] text-amber-600 mt-1.5 hidden font-medium flex items-center gap-1">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0-6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                    Restricted to Today's date (Agent lock).
+                                </p>
+                            </div>
+
+                            <!-- Agent Code Dropdown or Text Lock -->
+                            <div>
+                                <label for="entry-agent-code" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Collector Agent Code</label>
+                                <div id="agent-code-select-container">
+                                    <!-- Dynamic layout injected based on user role -->
+                                </div>
+                            </div>
+
+                            <!-- Account Number Mandatory -->
+                            <div>
+                                <label for="entry-account" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Account Number <span class="text-red-500 font-bold">*</span></label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                        </svg>
+                                    </div>
+                                    <input type="text" id="entry-account" required placeholder="Mandatory Account No."
+                                        class="w-full pl-10 px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-850 font-mono font-bold tracking-wide transition-colors bg-slate-50">
+                                </div>
+                            </div>
+
+                            <!-- Amount -->
+                            <div>
+                                <label for="entry-amount" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Collection Amount (₹) <span class="text-red-500 font-bold">*</span></label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                        <span class="text-slate-400 font-extrabold text-sm">₹</span>
+                                    </div>
+                                    <input type="number" id="entry-amount" step="1" min="1" required placeholder="0"
+                                        class="w-full pl-8 px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-850 font-black transition-colors bg-slate-50">
+                                </div>
+                            </div>
+
+                            <!-- Source / Customer Name -->
+                            <div>
+                                <label for="entry-source" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Source / Depositor Name <span class="text-red-500 font-bold">*</span></label>
+                                <input type="text" id="entry-source" required placeholder="Depositor's Full Name"
+                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-800 font-semibold transition-colors bg-slate-50">
+                            </div>
+
+                            <!-- Notes -->
+                            <div>
+                                <label for="entry-notes" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Notes (Optional)</label>
+                                <textarea id="entry-notes" rows="2" placeholder="Any additional narrative remarks..."
+                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-800 text-xs transition-colors bg-slate-50 resize-none"></textarea>
+                            </div>
+
+                            <button type="submit"
+                                class="w-full bg-sgn-accent hover:bg-blue-850 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-blue-500/10 hover:shadow-xl hover:shadow-blue-500/25 transition-all flex justify-center items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                                </svg>
+                                Log Transaction (Sync Live)
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Financial Summary Card -->
+                    <div class="bg-gradient-to-br from-sgn-navy to-slate-900 rounded-2xl shadow-xl p-5 text-white border border-slate-800">
+                        <h3 class="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Live Active Balance</h3>
+                        <div class="text-3xl font-black flex items-baseline gap-1 tracking-tight">
+                            <span class="text-lg font-bold text-amber-500">₹</span>
+                            <span id="grand-total-amount" class="font-extrabold text-white">0.00</span>
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
+                            <span class="font-semibold">Approved Records:</span>
+                            <span id="total-entries-count" class="font-black text-white text-xs bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-75 shadow-inner">0</span>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- Right Column: Ledger List / History and Filtering -->
+                <section class="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex flex-wrap justify-between items-center bg-slate-50 gap-3">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Live Collections Directory</h2>
+                                <span class="flex h-2 w-2 relative">
+                                    <span id="ping-pulse-indicator" class="hidden animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span id="dot-pulse-indicator" class="relative inline-flex rounded-full h-2 w-2 bg-slate-400"></span>
+                                </span>
+                            </div>
+                            <p class="text-slate-500 text-xs mt-0.5">Streamed live across cooperative credit channels</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <!-- Filter by Agent (Admin Only) -->
+                            <div id="filter-agent-container" class="hidden">
+                                <select id="filter-agent" class="text-xs font-bold bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-sgn-accent">
+                                    <option value="all">All Agents</option>
+                                    <!-- Dynamic agent list -->
+                                </select>
+                            </div>
+                            <div class="flex gap-1 bg-slate-200/55 p-1 rounded-xl">
+                                <button id="btn-expand-all" class="text-[11px] font-bold text-slate-600 hover:text-slate-900 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-white">Expand All</button>
+                                <button id="btn-collapse-all" class="text-[11px] font-bold text-slate-600 hover:text-slate-900 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-white">Collapse All</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- History Directory List -->
+                    <div id="collections-container" class="flex-1 overflow-y-auto p-4 space-y-3">
+                        <!-- Dynamic content -->
+                        <div id="empty-state" class="h-full flex flex-col items-center justify-center text-slate-400 p-8 text-center space-y-3">
+                            <div class="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-slate-350" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-bold text-slate-700">Audit Ledger Empty</p>
+                                <p class="text-xs text-slate-500 mt-1">No live transaction records logged today.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- VIEW 2: USER MANAGEMENT (ADMIN ONLY) -->
+            <div id="view-users-system" class="flex-1 flex flex-col md:flex-row gap-6 w-full h-full hidden">
+                
+                <!-- Left Column: Add New Agent Form -->
+                <section class="w-full md:w-[360px] shrink-0 overflow-y-auto">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+                        <h2 class="text-sm font-bold text-slate-800 border-b pb-3 mb-4 uppercase tracking-wider">Register Collector</h2>
+                        
+                        <form id="agent-form" class="space-y-4">
+                            <div>
+                                <label for="agent-username" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Agent Username <span class="text-red-500 font-bold">*</span></label>
+                                <input type="text" id="agent-username" required placeholder="e.g., Harpreet"
+                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-800 font-semibold transition-colors bg-slate-50">
+                            </div>
+
+                            <div>
+                                <label for="agent-password" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Set Password <span class="text-red-500 font-bold">*</span></label>
+                                <input type="password" id="agent-password" required placeholder="••••••••"
+                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-800 font-semibold transition-colors bg-slate-50">
+                            </div>
+
+                            <div>
+                                <label for="agent-code-select" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Assign Agent Code <span class="text-red-500 font-bold">*</span></label>
+                                <select id="agent-code-select" required
+                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-850 font-mono font-bold transition-colors bg-slate-50">
+                                    <!-- Dynamic agent values -->
+                                </select>
+                            </div>
+
+                            <button type="submit"
+                                class="w-full bg-sgn-navy hover:bg-slate-800 text-white font-bold py-3 rounded-xl shadow-lg transition-colors flex justify-center items-center gap-2">
+                                <svg class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                </svg>
+                                Create Agent Account (Save Live)
+                            </button>
+                        </form>
+                    </div>
+                </section>
+
+                <!-- Right Column: Registered Agents Ledger -->
+                <section class="flex-1 bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col shadow-sm">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50">
+                        <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Authorized Agents List</h2>
+                        <p class="text-slate-500 text-xs">Currently registered active collectors synced in cloud directory</p>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto p-4">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="text-slate-400 border-b border-slate-200 text-[10px] font-bold uppercase tracking-wider">
+                                        <th class="py-3 px-3 font-extrabold">Agent Name</th>
+                                        <th class="py-3 px-3 font-extrabold text-center">Assigned Code</th>
+                                        <th class="py-3 px-3 font-extrabold">Credentials</th>
+                                        <th class="py-3 px-3 font-extrabold text-right">System Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="agents-table-body" class="divide-y divide-slate-100">
+                                    <!-- Dynamic user table injection -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+        </main>
+    </div>
+
+    <!-- FIREBASE AND SYSTEM ENGINE SCRIPT MODULE -->
+    <script type="module">
+        // Import official Firebase JS SDK Modules (V11.6.1)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global App details 
+        const appId = typeof __app_id !== 'undefined' ? __app_id : (typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'sgnccs-daily-tracker-live');
+        
+        let db = null;
+        let auth = null;
+        let isFirebaseActive = false;
+        let activeUser = null; // Rule 3 Authenticated User Reference
+
+        // Default local memory fallback arrays
+        let collections = [];
+        let agents = [];
+
+        // Active State parameters
+        const ADMIN_ID = "Parminder";
+        const ADMIN_PWD = "Command@1";
+        const AGENT_CODES = Array.from({ length: 11 }, (_, i) => `AG${String(i + 1).padStart(2, '0')}`);
+
+        let currentUser = null; 
+        let sessionOpened = false;
+        let expandedDates = new Set();
+        let activeAdminTab = 'collections';
+
+        // DOM Handles
+        const loginContainer = document.getElementById('login-container');
+        const loginForm = document.getElementById('login-form');
+        const loginUser = document.getElementById('login-username');
+        const loginPass = document.getElementById('login-password');
+        
+        const mainApp = document.getElementById('main-app');
+        const dayOpenModal = document.getElementById('day-open-modal');
+        const btnConfirmOpenDay = document.getElementById('btn-confirm-open-day');
+        const agentModalCodeBadge = document.getElementById('agent-modal-code-badge');
+        const agentModalDateBadge = document.getElementById('agent-modal-date-badge');
+        
+        const displayUserRole = document.getElementById('display-user-role');
+        const displayUserName = document.getElementById('display-user-name');
+        const displayAgentCodePill = document.getElementById('display-agent-code-pill');
+        const btnLogout = document.getElementById('btn-logout');
+
+        const adminNavbar = document.getElementById('admin-navbar');
+        const tabCollections = document.getElementById('tab-collections');
+        const tabUsers = document.getElementById('tab-users');
+        const viewCollectionsSystem = document.getElementById('view-collections-system');
+        const viewUsersSystem = document.getElementById('view-users-system');
+
+        const collectionForm = document.getElementById('collection-form');
+        const entryDate = document.getElementById('entry-date');
+        const entryAccount = document.getElementById('entry-account');
+        const entryAmount = document.getElementById('entry-amount');
+        const entrySource = document.getElementById('entry-source');
+        const entryNotes = document.getElementById('entry-notes');
+        const agentActiveBadge = document.getElementById('agent-active-badge');
+        const agentDateWarning = document.getElementById('agent-date-warning');
+        const agentCodeSelectContainer = document.getElementById('agent-code-select-container');
+
+        const filterAgentContainer = document.getElementById('filter-agent-container');
+        const filterAgent = document.getElementById('filter-agent');
+        const collectionsContainer = document.getElementById('collections-container');
+        const emptyState = document.getElementById('empty-state');
+        const grandTotalAmount = document.getElementById('grand-total-amount');
+        const totalEntriesCount = document.getElementById('total-entries-count');
+        const btnExpandAll = document.getElementById('btn-expand-all');
+        const btnCollapseAll = document.getElementById('btn-collapse-all');
+
+        const agentForm = document.getElementById('agent-form');
+        const agentUsername = document.getElementById('agent-username');
+        const agentPassword = document.getElementById('agent-password');
+        const agentCodeSelect = document.getElementById('agent-code-select');
+        const agentsTableBody = document.getElementById('agents-table-body');
+        
+        const btnExportBackup = document.getElementById('btn-export-backup');
+        const importBackupFile = document.getElementById('import-backup-file');
+
+        // Cloud Link parameters configuration
+        const dbSetupModal = document.getElementById('db-setup-modal');
+        const btnTriggerDbConfig = document.getElementById('btn-trigger-db-config');
+        const btnCloseDbModal = document.getElementById('btn-close-db-modal');
+        const btnSaveDbConfig = document.getElementById('btn-save-db-config');
+        const btnClearDbConfig = document.getElementById('btn-clear-db-config');
+        const dbConfigInput = document.getElementById('db-config-input');
+        const dbStatusLabel = document.getElementById('db-status-label');
+        const headerSyncStatus = document.getElementById('header-sync-status');
+        const pingPulseIndicator = document.getElementById('ping-pulse-indicator');
+        const dotPulseIndicator = document.getElementById('dot-pulse-indicator');
+
+        // Toast Messages
+        function triggerToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `p-4 rounded-xl shadow-xl border text-sm flex items-center gap-3 animate-fade-in text-white transition-all pointer-events-auto ${
+                type === 'success' ? 'bg-slate-900 border-slate-800' : 'bg-red-600 border-red-500'
+            }`;
+            
+            const icon = type === 'success' ? 
+                `<svg class="w-5 h-5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>` : 
+                `<svg class="w-5 h-5 text-red-200 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`;
+
+            toast.innerHTML = `${icon}<span class="font-semibold text-xs tracking-wide">${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => toast.remove(), 250);
+            }, 3000);
+        }
+
+        function formatCurrency(amount) {
+            return parseFloat(amount).toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function formatDate(dateStr) {
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            const d = new Date(parts[0], parts[1] - 1, parts[2]);
+            return d.toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function getTodayString() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Initialize Firebase connection (Rule 3 prioritizes authentication before running queries)
+        async function initializeStorage() {
+            // Check for configuration saved inside localStorage or provided inside global parameters
+            let savedConfig = localStorage.getItem('sgnccs_firebase_config');
+            let configToUse = null;
+
+            if (savedConfig) {
+                try {
+                    configToUse = JSON.parse(savedConfig);
+                } catch (e) {
+                    console.error("Parsed local configuration corrupt");
+                }
+            } else {
+                const globalConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : (typeof window !== 'undefined' && window.__firebase_config ? window.__firebase_config : null);
+                if (globalConfig) {
+                    try {
+                        configToUse = typeof globalConfig === 'string' ? JSON.parse(globalConfig) : globalConfig;
+                    } catch (e) {
+                        console.error("Global parameters corrupt");
+                    }
+                }
+            }
+
+            if (configToUse && configToUse.apiKey) {
+                try {
+                    const app = initializeApp(configToUse);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+
+                    // Perform Cloud Authentication First (Strict Rule 3 & Token Priority Compliant)
+                    const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : (typeof window !== 'undefined' && window.__initial_auth_token ? window.__initial_auth_token : null);
+                    if (token) {
+                        await signInWithCustomToken(auth, token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            activeUser = user;
+                            isFirebaseActive = true;
+                            updateSyncStatusUI(true);
+                            listenToLiveSync();
+                        } else {
+                            activeUser = null;
+                            isFirebaseActive = false;
+                            updateSyncStatusUI(false);
+                        }
+                    });
+                } catch (err) {
+                    console.error("Cloud database connection fail, running local simulation:", err);
+                    isFirebaseActive = false;
+                    updateSyncStatusUI(false);
+                    loadLocalFallback();
+                }
+            } else {
+                isFirebaseActive = false;
+                updateSyncStatusUI(false);
+                loadLocalFallback();
+            }
+        }
+
+        function updateSyncStatusUI(active) {
+            if (active) {
+                dbStatusLabel.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Cloud Synchronized`;
+                headerSyncStatus.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live Sync`;
+                headerSyncStatus.className = "text-[10px] bg-emerald-600 text-white font-black px-2 py-0.5 rounded tracking-wider uppercase flex items-center gap-1";
+                
+                pingPulseIndicator.classList.remove('hidden');
+                dotPulseIndicator.className = "relative inline-flex rounded-full h-2 w-2 bg-emerald-500";
+            } else {
+                dbStatusLabel.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Offline / Local Cache`;
+                headerSyncStatus.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Local Cache`;
+                headerSyncStatus.className = "text-[10px] bg-slate-500 text-slate-150 font-black px-2 py-0.5 rounded tracking-wider uppercase flex items-center gap-1";
+                
+                pingPulseIndicator.classList.add('hidden');
+                dotPulseIndicator.className = "relative inline-flex rounded-full h-2 w-2 bg-slate-400";
+            }
+        }
+
+        // Real-Time Sync Streams (Strict Rule 1 paths, Rule 2 local sorting/filtering mapping)
+        function listenToLiveSync() {
+            if (!isFirebaseActive || !activeUser || !auth.currentUser) return;
+
+            // Rule 1 Strict Path bindings
+            const publicCollectionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'collections');
+            const publicAgentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'agents');
+
+            // Listen to collections
+            onSnapshot(publicCollectionsRef, (snapshot) => {
+                const liveList = [];
+                snapshot.forEach(doc => {
+                    liveList.push({ id: doc.id, ...doc.data() });
+                });
+                collections = liveList;
+                renderUI();
+            }, (error) => {
+                console.error("Live collections fetch failed: ", error);
+                triggerToast("Cloud synchronisation sync error.", "error");
+            });
+
+            // Listen to Agents
+            onSnapshot(publicAgentsRef, (snapshot) => {
+                const liveAgents = [];
+                snapshot.forEach(doc => {
+                    liveAgents.push({ id: doc.id, ...doc.data() });
+                });
+                agents = liveAgents;
+                buildAgentCodeSelectors();
+                renderAgentsList();
+            }, (error) => {
+                console.error("Live agents fetch failed: ", error);
+            });
+        }
+
+        function loadLocalFallback() {
+            const storedCollections = localStorage.getItem('sgnccs_collections');
+            if (storedCollections) {
+                try { collections = JSON.parse(storedCollections); } catch (e) { collections = []; }
+            }
+            const storedAgents = localStorage.getItem('sgnccs_agents');
+            if (storedAgents) {
+                try { agents = JSON.parse(storedAgents); } catch (e) { agents = []; }
+            }
+            buildAgentCodeSelectors();
+            renderUI();
+            renderAgentsList();
+        }
+
+        // Commit logs to local or Firebase Cloud depending on initialization state (Rule 3 safe guard check)
+        async function commitCollectionRecord(record) {
+            if (isFirebaseActive && activeUser) {
+                try {
+                    // Rule 3 Authentication Verification Guard check
+                    if (!auth.currentUser) return;
+                    
+                    // Rule 1 compliant exact document referencing
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'collections', record.id);
+                    await setDoc(docRef, record);
+                } catch (err) {
+                    triggerToast("Sync error saving record", "error");
+                    console.error(err);
+                }
+            } else {
+                collections.push(record);
+                localStorage.setItem('sgnccs_collections', JSON.stringify(collections));
+                renderUI();
+            }
+        }
+
+        async function removeCollectionRecord(id) {
+            if (isFirebaseActive && activeUser) {
+                try {
+                    if (!auth.currentUser) return;
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'collections', id);
+                    await deleteDoc(docRef);
+                } catch (err) {
+                    triggerToast("Sync error removing record", "error");
+                }
+            } else {
+                collections = collections.filter(c => c.id !== id);
+                localStorage.setItem('sgnccs_collections', JSON.stringify(collections));
+                renderUI();
+            }
+        }
+
+        async function commitAgentRecord(agent) {
+            if (isFirebaseActive && activeUser) {
+                try {
+                    if (!auth.currentUser) return;
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'agents', agent.username);
+                    await setDoc(docRef, agent);
+                } catch (err) {
+                    triggerToast("Sync error registering agent", "error");
+                }
+            } else {
+                agents.push(agent);
+                localStorage.setItem('sgnccs_agents', JSON.stringify(agents));
+                buildAgentCodeSelectors();
+                renderAgentsList();
+            }
+        }
+
+        async function removeAgentRecord(username) {
+            if (isFirebaseActive && activeUser) {
+                try {
+                    if (!auth.currentUser) return;
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'agents', username);
+                    await deleteDoc(docRef);
+                } catch (err) {
+                    triggerToast("Sync error removing agent", "error");
+                }
+            } else {
+                agents = agents.filter(a => a.username !== username);
+                localStorage.setItem('sgnccs_agents', JSON.stringify(agents));
+                buildAgentCodeSelectors();
+                renderAgentsList();
+            }
+        }
+
+        function loadSession() {
+            const storedSession = sessionStorage.getItem('sgnccs_session');
+            if (storedSession) {
+                try {
+                    currentUser = JSON.parse(storedSession);
+                    sessionOpened = true; 
+                    renderAppLayout();
+                } catch (e) {
+                    currentUser = null;
+                    renderLoginLayout();
+                }
+            } else {
+                renderLoginLayout();
+            }
+        }
+
+        // Setup codes configuration dynamic allocations
+        function buildAgentCodeSelectors() {
+            const usedCodes = agents.map(a => a.agentCode);
+            const availableCodes = AGENT_CODES.filter(code => !usedCodes.includes(code));
+            
+            agentCodeSelect.innerHTML = '';
+            if (availableCodes.length === 0) {
+                const opt = document.createElement('option');
+                opt.text = "No codes left (01-11 filled)";
+                opt.disabled = true;
+                agentCodeSelect.appendChild(opt);
+            } else {
+                availableCodes.forEach(code => {
+                    const opt = document.createElement('option');
+                    opt.value = code;
+                    opt.textContent = code;
+                    agentCodeSelect.appendChild(opt);
+                });
+            }
+
+            filterAgent.innerHTML = '<option value="all">All Agents</option><option value="admin">Admin Override</option>';
+            AGENT_CODES.forEach(code => {
+                const opt = document.createElement('option');
+                opt.value = code;
+                opt.textContent = `Agent ${code}`;
+                filterAgent.appendChild(opt);
+            });
+        }
+
+        // Auth Login verify
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const u = loginUser.value.trim();
+            const p = loginPass.value;
+
+            if (u === ADMIN_ID && p === ADMIN_PWD) {
+                currentUser = { username: ADMIN_ID, role: 'admin', agentCode: 'ADMIN' };
+                sessionStorage.setItem('sgnccs_session', JSON.stringify(currentUser));
+                triggerToast("Welcome Parminder. Core security unlocked.", "success");
+                loginUser.value = '';
+                loginPass.value = '';
+                sessionOpened = true;
+                renderAppLayout();
+                return;
+            }
+
+            const agentProfile = agents.find(a => a.username.toLowerCase() === u.toLowerCase() && a.password === p);
+            if (agentProfile) {
+                currentUser = { username: agentProfile.username, role: 'agent', agentCode: agentProfile.agentCode };
+                sessionStorage.setItem('sgnccs_session', JSON.stringify(currentUser));
+                triggerToast(`Verified login for ${agentProfile.username}.`, "success");
+                loginUser.value = '';
+                loginPass.value = '';
+                sessionOpened = false; 
+                renderAppLayout();
+                return;
+            }
+
+            triggerToast("Login failed. Check your ID and password.", "error");
+        });
+
+        btnLogout.addEventListener('click', function() {
+            sessionStorage.removeItem('sgnccs_session');
+            currentUser = null;
+            sessionOpened = false;
+            renderLoginLayout();
+            triggerToast("Terminal session closed.", "success");
+        });
+
+        function renderLoginLayout() {
+            loginContainer.classList.remove('hidden');
+            mainApp.classList.add('hidden');
+            dayOpenModal.classList.add('hidden');
+            btnTriggerDbConfig.classList.add('hidden');
+        }
+
+        function renderAppLayout() {
+            loginContainer.classList.add('hidden');
+            mainApp.classList.remove('hidden');
+            btnTriggerDbConfig.classList.remove('hidden');
+
+            displayUserName.textContent = currentUser.username;
+            displayUserRole.textContent = currentUser.role.toUpperCase();
+
+            if (currentUser.role === 'admin') {
+                adminNavbar.classList.remove('hidden');
+                displayAgentCodePill.classList.add('hidden');
+                filterAgentContainer.classList.remove('hidden');
+                agentActiveBadge.textContent = "ADMIN ROUTE";
+                agentActiveBadge.className = "text-[10px] font-extrabold bg-slate-900 text-slate-100 px-2.5 py-0.5 rounded-full border border-slate-800";
+                agentDateWarning.classList.add('hidden');
+                
+                entryDate.removeAttribute('readonly');
+                entryDate.classList.remove('bg-slate-100', 'cursor-not-allowed');
+                entryDate.value = getTodayString();
+                
+                renderAgentCodeField(true);
+                routeAdminTab();
+                dayOpenModal.classList.add('hidden');
+                renderUI();
+            } else {
+                adminNavbar.classList.add('hidden');
+                viewCollectionsSystem.classList.remove('hidden');
+                viewUsersSystem.classList.add('hidden');
+                
+                displayAgentCodePill.textContent = currentUser.agentCode;
+                displayAgentCodePill.classList.remove('hidden');
+                filterAgentContainer.classList.add('hidden');
+                
+                agentActiveBadge.textContent = `AGENT ACTIVE (${currentUser.agentCode})`;
+                agentActiveBadge.className = "text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200";
+                agentDateWarning.classList.remove('hidden');
+                
+                entryDate.setAttribute('readonly', 'true');
+                entryDate.classList.add('bg-slate-100', 'cursor-not-allowed');
+                entryDate.value = getTodayString();
+                
+                renderAgentCodeField(false);
+
+                if (!sessionOpened) {
+                    agentModalCodeBadge.textContent = currentUser.agentCode;
+                    agentModalDateBadge.textContent = formatDate(getTodayString());
+                    dayOpenModal.classList.remove('hidden');
+                } else {
+                    dayOpenModal.classList.add('hidden');
+                    renderUI();
+                }
+            }
+        }
+
+        btnConfirmOpenDay.addEventListener('click', function() {
+            sessionOpened = true;
+            dayOpenModal.classList.add('hidden');
+            triggerToast(`Session initialized for agent ${currentUser.agentCode}.`, "success");
+            renderUI();
+        });
+
+        function renderAgentCodeField(isAdmin) {
+            agentCodeSelectContainer.innerHTML = '';
+            if (isAdmin) {
+                const select = document.createElement('select');
+                select.id = "entry-agent-code";
+                select.required = true;
+                select.className = "w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-850 transition-colors font-mono font-bold bg-slate-50";
+                
+                const optAdmin = document.createElement('option');
+                optAdmin.value = "ADMIN";
+                optAdmin.textContent = "ADMIN OVERRIDE (SYSTEM)";
+                select.appendChild(optAdmin);
+
+                AGENT_CODES.forEach(code => {
+                    const opt = document.createElement('option');
+                    opt.value = code;
+                    opt.textContent = `Agent Code: ${code}`;
+                    select.appendChild(opt);
+                });
+                agentCodeSelectContainer.appendChild(select);
+            } else {
+                const input = document.createElement('input');
+                input.type = "text";
+                input.id = "entry-agent-code";
+                input.value = currentUser.agentCode;
+                input.setAttribute('readonly', 'true');
+                input.className = "w-full px-3.5 py-2.5 border border-slate-200 bg-slate-100 rounded-xl text-slate-600 font-mono font-bold cursor-not-allowed";
+                agentCodeSelectContainer.appendChild(input);
+            }
+        }
+
+        tabCollections.addEventListener('click', () => {
+            activeAdminTab = 'collections';
+            routeAdminTab();
+        });
+
+        tabUsers.addEventListener('click', () => {
+            activeAdminTab = 'users';
+            routeAdminTab();
+        });
+
+        function routeAdminTab() {
+            if (activeAdminTab === 'collections') {
+                tabCollections.className = "text-sm font-bold text-slate-800 border-b-2 border-sgn-accent px-2 py-2 flex items-center gap-2 transition-all";
+                tabUsers.className = "text-sm font-semibold text-slate-500 hover:text-slate-800 border-b-2 border-transparent px-2 py-2 flex items-center gap-2 transition-all";
+                viewCollectionsSystem.classList.remove('hidden');
+                viewUsersSystem.classList.add('hidden');
+                renderUI();
+            } else {
+                tabUsers.className = "text-sm font-bold text-slate-800 border-b-2 border-sgn-accent px-2 py-2 flex items-center gap-2 transition-all";
+                tabCollections.className = "text-sm font-semibold text-slate-500 hover:text-slate-800 border-b-2 border-transparent px-2 py-2 flex items-center gap-2 transition-all";
+                viewCollectionsSystem.classList.add('hidden');
+                viewUsersSystem.classList.remove('hidden');
+                renderAgentsList();
+            }
+        }
+
+        // New transaction submission
+        collectionForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const date = entryDate.value;
+            const amount = parseInt(entryAmount.value, 10);
+            const source = entrySource.value.trim();
+            const account = entryAccount.value.trim();
+            const notes = entryNotes.value.trim();
+            
+            const codeField = document.getElementById('entry-agent-code');
+            const agentCodeVal = codeField ? codeField.value : currentUser.agentCode;
+
+            if (currentUser.role === 'agent') {
+                if (date !== getTodayString()) {
+                    triggerToast("You can only post entries to today's date.", "error");
+                    return;
+                }
+            }
+
+            if (!date || !amount || amount <= 0 || !source || !account) {
+                triggerToast("Complete all required fields correctly before submitting.", "error");
+                return;
+            }
+
+            const newRecord = {
+                id: Date.now().toString(),
+                date: date,
+                amount: amount,
+                source: source,
+                account: account,
+                notes: notes,
+                agentCode: agentCodeVal,
+                recordedBy: currentUser.username,
+                timestamp: Date.now()
+            };
+
+            commitCollectionRecord(newRecord);
+            expandedDates.add(date); 
+            
+            entryAmount.value = '';
+            entrySource.value = '';
+            entryAccount.value = '';
+            entryNotes.value = '';
+            
+            triggerToast("Live transaction logged successfully.", "success");
+            entryAccount.focus();
+        });
+
+        // Compute local state projections (Rule 2 simple query mapping)
+        function getGroupedAndFilteredCollections() {
+            const agentFilterVal = filterAgent.value;
+            const grouped = {};
+            
+            const readableCollections = collections.filter(record => {
+                if (currentUser.role === 'agent') {
+                    return record.agentCode === currentUser.agentCode;
+                }
+                if (agentFilterVal !== 'all') {
+                    if (agentFilterVal === 'admin') return record.agentCode === 'ADMIN';
+                    return record.agentCode.toLowerCase() === agentFilterVal.toLowerCase();
+                }
+                return true;
+            });
+            
+            readableCollections.forEach(entry => {
+                if (!grouped[entry.date]) {
+                    grouped[entry.date] = {
+                        date: entry.date,
+                        entries: [],
+                        total: 0
+                    };
+                }
+                grouped[entry.date].entries.push(entry);
+                grouped[entry.date].total += entry.amount;
+            });
+
+            const sortedGroups = Object.values(grouped).sort((a, b) => new Date(b.date) - new Date(a.date));
+            sortedGroups.forEach(group => {
+                group.entries.sort((a, b) => b.timestamp - a.timestamp);
+            });
+
+            return sortedGroups;
+        }
+
+        function deleteEntry(id) {
+            const record = collections.find(c => c.id === id);
+            if (!record) return;
+
+            if (currentUser.role !== 'admin' && record.recordedBy !== currentUser.username) {
+                triggerToast("Unauthorised transaction deletion.", "error");
+                return;
+            }
+
+            removeCollectionRecord(id);
+            triggerToast("Transaction entry deleted.", "success");
+        }
+        window.deleteEntry = deleteEntry; 
+
+        function toggleGroup(date) {
+            if (expandedDates.has(date)) {
+                expandedDates.delete(date);
+            } else {
+                expandedDates.add(date);
+            }
+            renderUI();
+        }
+        window.toggleGroup = toggleGroup;
+
+        // Download high-fidelity daily collection summary statements
+        function downloadDayPDF(event, dateStr) {
+            if (event) {
+                event.stopPropagation(); // Prevent accordion toggles
+            }
+
+            const grouped = getGroupedAndFilteredCollections();
+            const dayGroup = grouped.find(g => g.date === dateStr);
+            if (!dayGroup) {
+                triggerToast("Statement registry empty.", "error");
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                const primaryColor = [15, 23, 42];   // Deep Navy
+                const accentColor = [217, 119, 6];   // Gold
+                const lightBg = [241, 245, 249];     // Navylight
+
+                // Title panel 
+                doc.setFillColor(...primaryColor);
+                doc.rect(0, 0, 210, 42, 'F');
+
+                doc.setTextColor(255, 255, 255);
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(22);
+                doc.text("SGNCCS", 14, 18);
+                
+                doc.setFont("Helvetica", "normal");
+                doc.setFontSize(9.5);
+                doc.setTextColor(220, 220, 220);
+                doc.text("SRI GURU NANAK COOPERATIVE CREDIT SOCIETY", 14, 25);
+                doc.setFont("Helvetica", "italic");
+                doc.text("Daily Ledger Collection Audit Statement", 14, 31);
+
+                const printTime = new Date().toLocaleString('en-IN');
+                doc.setFont("Helvetica", "normal");
+                doc.setFontSize(8);
+                doc.setTextColor(190, 190, 190);
+                doc.text(`Generated: ${printTime}`, 135, 18);
+                doc.text(`System Reference: SGNCCS-LIVE-SYNC`, 135, 23);
+                doc.text(`Doc Type: AUDIT_STMT`, 135, 28);
+
+                // Audit Params metadata block
+                doc.setTextColor(...primaryColor);
+                doc.setFontSize(11);
+                doc.setFont("Helvetica", "bold");
+                doc.text("Audit Parameters:", 14, 52);
+
+                doc.setFont("Helvetica", "normal");
+                doc.setFontSize(9);
+                doc.text(`Statement Date:  ${formatDate(dateStr)} (${dateStr})`, 14, 59);
+                doc.text(`Total Records:   ${dayGroup.entries.length} Transaction(s)`, 14, 65);
+                doc.text(`Exported By:     ${currentUser.username} (${currentUser.role.toUpperCase()})`, 14, 71);
+
+                // Summaries 
+                doc.setFillColor(...lightBg);
+                doc.rect(130, 48, 66, 26, 'F');
+                doc.setDrawColor(226, 232, 240);
+                doc.rect(130, 48, 66, 26, 'S');
+
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(8.5);
+                doc.setTextColor(100, 116, 139);
+                doc.text("TOTAL COLLECTIONS (INR)", 134, 56);
+                
+                doc.setFontSize(15);
+                doc.setTextColor(...accentColor);
+                doc.text(`Rs. ${formatCurrency(dayGroup.total)}`, 134, 66);
+
+                const tableHeaders = [["S.No", "Account No.", "Depositor Name", "Agent Code", "Amount (INR)", "Notes"]];
+                const tableRows = dayGroup.entries.map((entry, idx) => [
+                    idx + 1,
+                    entry.account,
+                    entry.source,
+                    entry.agentCode,
+                    `Rs. ${formatCurrency(entry.amount)}`,
+                    entry.notes || 'N/A'
+                ]);
+
+                // Create AutoTable with exactly 182 units wide configuration to avoid column width overflow console warning
+                doc.autoTable({
+                    startY: 80,
+                    head: tableHeaders,
+                    body: tableRows,
+                    theme: 'grid',
+                    headStyles: {
+                        fillColor: primaryColor,
+                        textColor: [255, 255, 255],
+                        fontSize: 9,
+                        fontStyle: 'bold',
+                        halign: 'left'
+                    },
+                    columnStyles: {
+                        0: { cellWidth: 10 },
+                        1: { cellWidth: 30, fontStyle: 'bold' },
+                        2: { cellWidth: 48 },
+                        3: { cellWidth: 20, halign: 'center' },
+                        4: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },
+                        5: { cellWidth: 44 }
+                    },
+                    alternateRowStyles: {
+                        fillColor: [248, 250, 252]
+                    },
+                    styles: {
+                        fontSize: 8.5,
+                        cellPadding: 2.5
+                    },
+                    margin: { left: 14, right: 14 }
+                });
+
+                // Signature verification
+                const finalY = doc.previousAutoTable.finalY + 25;
+                const pageNum = doc.internal.getNumberOfPages();
+                
+                if (finalY > 260) {
+                    doc.addPage();
+                    doc.setPage(pageNum + 1);
+                }
+
+                const renderY = finalY > 260 ? 40 : finalY;
+
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineDash([1.5, 1.5], 0);
+                doc.line(14, renderY, 70, renderY);
+                doc.line(140, renderY, 196, renderY);
+                doc.setLineDash();
+
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(8.5);
+                doc.setTextColor(71, 85, 105);
+                doc.text("Collector Agent Signature", 14, renderY + 5);
+                doc.text("Authorized Auditor Stamp", 140, renderY + 5);
+
+                doc.setFont("Helvetica", "italic");
+                doc.setFontSize(7.5);
+                doc.text("This is an electronically generated and certified live auditing sheet. Signature stamp overrides not required.", 14, renderY + 15);
+
+                doc.save(`SGNCCS_Collection_Report_${dateStr}.pdf`);
+                triggerToast("Daily Summary Statement PDF downloaded.", "success");
+            } catch (err) {
+                console.error(err);
+                triggerToast("PDF generation failed.", "error");
+            }
+        }
+        window.downloadDayPDF = downloadDayPDF;
+
+        btnExpandAll.addEventListener('click', () => {
+            const grouped = getGroupedAndFilteredCollections();
+            grouped.forEach(g => expandedDates.add(g.date));
+            renderUI();
+        });
+
+        btnCollapseAll.addEventListener('click', () => {
+            expandedDates.clear();
+            renderUI();
+        });
+
+        filterAgent.addEventListener('change', () => {
+            renderUI();
+        });
+
+        function renderUI() {
+            if (!currentUser) return;
+
+            const toRemove = Array.from(collectionsContainer.children).filter(child => child.id !== 'empty-state');
+            toRemove.forEach(node => node.remove());
+
+            const groupedData = getGroupedAndFilteredCollections();
+            
+            let runningTotal = 0;
+            let entriesCount = 0;
+
+            const visibleCollections = collections.filter(record => {
+                if (currentUser.role === 'agent') return record.agentCode === currentUser.agentCode;
+                const filterVal = filterAgent.value;
+                if (filterVal !== 'all') {
+                    if (filterVal === 'admin') return record.agentCode === 'ADMIN';
+                    return record.agentCode.toLowerCase() === filterVal.toLowerCase();
+                }
+                return true;
+            });
+
+            visibleCollections.forEach(r => {
+                runningTotal += r.amount;
+                entriesCount++;
+            });
+
+            if (groupedData.length === 0) {
+                emptyState.style.display = 'flex';
+                grandTotalAmount.textContent = '0.00';
+                totalEntriesCount.textContent = '0';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+
+            groupedData.forEach((group, index) => {
+                const isExpanded = expandedDates.has(group.date);
+                const groupEl = document.createElement('div');
+                groupEl.className = 'bg-white border border-slate-200 rounded-xl overflow-hidden animate-fade-in shadow-sm';
+                groupEl.style.animationDelay = `${index * 0.02}s`;
+
+                groupEl.innerHTML = `
+                    <div class="flex justify-between items-center p-3.5 cursor-pointer transition-colors ${isExpanded ? 'bg-slate-50 border-b border-slate-200' : 'hover:bg-slate-50/50'}" onclick="toggleGroup('${group.date}')">
+                        <div class="flex items-center gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-90' : ''}" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                            <h3 class="font-bold text-slate-850 text-sm tracking-tight">${formatDate(group.date)}</h3>
+                            <span class="text-[10px] bg-slate-200/70 text-slate-700 font-extrabold px-2.5 py-0.5 rounded-full">${group.entries.length} txns</span>
+                        </div>
+                        <div class="flex items-center gap-3.5">
+                            <div class="font-extrabold text-slate-900 text-sm tracking-tight">
+                                ₹${formatCurrency(group.total)}
+                            </div>
+                            <button onclick="downloadDayPDF(event, '${group.date}')" class="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-xl border border-red-200 hover:border-red-300 transition-all flex items-center justify-center shadow-sm" title="Download Audit Statement PDF">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                if (isExpanded) {
+                    const entriesContainer = document.createElement('div');
+                    entriesContainer.className = 'divide-y divide-slate-100 bg-white';
+                    
+                    group.entries.forEach(entry => {
+                        const row = document.createElement('div');
+                        row.className = 'p-3.5 pl-9 flex justify-between items-start hover:bg-slate-50/50 transition-colors group/item relative';
+                        
+                        const isSelfLogged = entry.recordedBy === currentUser.username;
+                        const attributionLabel = entry.agentCode === "ADMIN" ? "System Admin" : `${entry.agentCode} (${entry.recordedBy})`;
+                        
+                        row.innerHTML = `
+                            <div class="flex-1 min-w-0 pr-4">
+                                <div class="flex items-center gap-2 flex-wrap">
+                                    <span class="font-bold text-slate-850 text-sm truncate">${entry.source}</span>
+                                    <span class="text-[9px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono font-bold tracking-wide">${attributionLabel}</span>
+                                </div>
+                                
+                                <div class="text-[11px] text-slate-550 mt-1 flex flex-wrap items-center gap-2">
+                                    <span class="flex items-center gap-1.5 font-semibold text-slate-600 bg-slate-50 border border-slate-150 px-2 py-0.5 rounded">
+                                        <svg class="h-3.5 w-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                        </svg>
+                                        <span class="font-mono font-bold text-slate-700 text-xs">${entry.account}</span>
+                                    </span>
+                                    ${entry.notes ? `<span class="text-slate-350">|</span> <span class="text-slate-500 italic truncate max-w-[200px] sm:max-w-xs">${entry.notes}</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end gap-1.5 shrink-0">
+                                <div class="font-extrabold text-slate-900 text-sm">₹${formatCurrency(entry.amount)}</div>
+                                
+                                ${(currentUser.role === 'admin' || isSelfLogged) ? `
+                                    <button onclick="deleteEntry('${entry.id}')" class="text-[10px] text-red-500 hover:text-red-700 opacity-0 group-hover/item:opacity-100 transition-opacity flex items-center gap-1 font-bold">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        Delete
+                                    </button>
+                                ` : ''}
+                            </div>
+                        `;
+                        entriesContainer.appendChild(row);
+                    });
+                    groupEl.appendChild(entriesContainer);
+                }
+
+                collectionsContainer.appendChild(groupEl);
+            });
+
+            grandTotalAmount.textContent = formatCurrency(runningTotal);
+            totalEntriesCount.textContent = entriesCount;
+        }
+
+        // Add new collector agent from Admin route
+        agentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (currentUser.role !== 'admin') {
+                triggerToast("Unprivileged action context.", "error");
+                return;
+            }
+
+            const username = agentUsername.value.trim();
+            const password = agentPassword.value;
+            const code = agentCodeSelect.value;
+
+            if (!username || !password || !code) {
+                triggerToast("Complete all required form fields.", "error");
+                return;
+            }
+
+            const isNameTaken = agents.some(a => a.username.toLowerCase() === username.toLowerCase()) || username.toLowerCase() === ADMIN_ID.toLowerCase();
+            const isCodeTaken = agents.some(a => a.agentCode === code);
+
+            if (isNameTaken) {
+                triggerToast("This collector username is already allocated.", "error");
+                return;
+            }
+
+            if (isCodeTaken) {
+                triggerToast(`Code allocation ${code} already assigned.`, "error");
+                return;
+            }
+
+            const newAgent = { username, password, agentCode: code };
+            commitAgentRecord(newAgent);
+            
+            agentUsername.value = '';
+            agentPassword.value = '';
+            
+            triggerToast(`Agent profile for ${username} (${code}) authorized and synchronized.`, "success");
+        });
+
+        function deleteAgent(username) {
+            if (currentUser.role !== 'admin') return;
+            removeAgentRecord(username);
+            triggerToast(`Agent profile for ${username} revoked.`, "success");
+        }
+        window.deleteAgent = deleteAgent;
+
+        function renderAgentsList() {
+            agentsTableBody.innerHTML = '';
+            
+            if (agents.length === 0) {
+                agentsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-8 text-slate-400 text-xs italic">
+                            No collector agents are currently registered in the SGNCCS Directory.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            agents.forEach(agent => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="py-3 px-3 font-bold text-slate-800 text-sm">${agent.username}</td>
+                    <td class="py-3 px-3 text-center">
+                        <span class="bg-amber-100 text-amber-800 text-xs font-mono font-bold px-2.5 py-1 rounded-lg border border-amber-200">
+                            ${agent.agentCode}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3 font-mono text-xs text-slate-500">
+                        <span class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg font-bold">Password: ${agent.password}</span>
+                    </td>
+                    <td class="py-3 px-3 text-right">
+                        <button onclick="deleteAgent('${agent.username}')" class="text-xs text-red-500 hover:text-red-700 font-bold hover:underline transition-all">
+                            Revoke License
+                        </button>
+                    </td>
+                `;
+                agentsTableBody.appendChild(tr);
+            });
+        }
+
+        // Export local/synced collections backup JSON format
+        btnExportBackup.addEventListener('click', () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                collections: collections,
+                agents: agents
+            }));
+            const downloadAnchor = document.createElement('a');
+            const dateSuffix = getTodayString();
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `sgnccs_live_backup_${dateSuffix}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            triggerToast("JSON Database Backup exported successfully.", "success");
+        });
+
+        // Import local/synced collections backup JSON format
+        importBackupFile.addEventListener('change', async (e) => {
+            const fileReader = new FileReader();
+            if (!e.target.files[0]) return;
+            
+            fileReader.onload = async (event) => {
+                try {
+                    const parsedData = JSON.parse(event.target.result);
+                    if (parsedData.collections && Array.isArray(parsedData.collections)) {
+                        for (const record of parsedData.collections) {
+                            await commitCollectionRecord(record);
+                        }
+                    }
+                    if (parsedData.agents && Array.isArray(parsedData.agents)) {
+                        for (const agent of parsedData.agents) {
+                            await commitAgentRecord(agent);
+                        }
+                    }
+                    triggerToast("Audit system state restored & synchronized successfully.", "success");
+                } catch (err) {
+                    triggerToast("Invalid JSON Backup schema structure.", "error");
+                }
+            };
+            fileReader.readAsText(e.target.files[0]);
+            importBackupFile.value = '';
+        });
+
+        // Setup settings button modal triggers
+        btnTriggerDbConfig.addEventListener('click', () => {
+            let savedConfig = localStorage.getItem('sgnccs_firebase_config');
+            if (savedConfig) {
+                dbConfigInput.value = savedConfig;
+            } else if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                dbConfigInput.value = JSON.stringify(JSON.parse(__firebase_config), null, 2);
+            } else {
+                dbConfigInput.value = '';
+            }
+            dbSetupModal.classList.remove('hidden');
+        });
+
+        btnCloseDbModal.addEventListener('click', () => {
+            dbSetupModal.classList.add('hidden');
+        });
+
+        btnSaveDbConfig.addEventListener('click', async () => {
+            const val = dbConfigInput.value.trim();
+            if (!val) {
+                triggerToast("Configuration text is empty.", "error");
+                return;
+            }
+            try {
+                const parsed = JSON.parse(val);
+                if (!parsed.apiKey || !parsed.projectId) {
+                    triggerToast("Invalid parameters. Missing apiKey or projectId.", "error");
+                    return;
+                }
+                localStorage.setItem('sgnccs_firebase_config', JSON.stringify(parsed));
+                triggerToast("Connection properties saved. Restarting sync stream...", "success");
+                dbSetupModal.classList.add('hidden');
+                
+                // Reboot live database
+                await initializeStorage();
+            } catch (err) {
+                triggerToast("Invalid JSON markup syntax.", "error");
+            }
+        });
+
+        btnClearDbConfig.addEventListener('click', async () => {
+            localStorage.removeItem('sgnccs_firebase_config');
+            triggerToast("Connection parameters cleared. Reverting to local fallback mode.", "success");
+            dbSetupModal.classList.add('hidden');
+            
+            // Re-boot local parameters
+            db = null;
+            auth = null;
+            isFirebaseActive = false;
+            activeUser = null;
+            updateSyncStatusUI(false);
+            loadLocalFallback();
+        });
+
+        // Bootstrap on core load
+        (async function init() {
+            await initializeStorage();
+            loadSession();
+        })();
+
+    </script>
+</body>
+</html>
