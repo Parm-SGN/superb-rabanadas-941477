@@ -88,7 +88,7 @@
             <div id="db-status-login-badge" class="mb-5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between">
                 <span class="text-slate-500 font-semibold">Database Sync:</span>
                 <span id="db-status-label" class="font-bold text-slate-700 flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-slate-400"></span> Local Cache Only
+                    <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span> Connecting to Cloud...
                 </span>
             </div>
 
@@ -669,6 +669,7 @@
 
                     // Perform Cloud Authentication First (Strict Rule 3 & Token Priority Compliant)
                     const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : (typeof window !== 'undefined' && window.__initial_auth_token ? window.__initial_auth_token : null);
+                    
                     if (token) {
                         await signInWithCustomToken(auth, token);
                     } else {
@@ -685,6 +686,7 @@
                             activeUser = null;
                             isFirebaseActive = false;
                             updateSyncStatusUI(false);
+                            loadLocalFallback();
                         }
                     });
                 } catch (err) {
@@ -736,7 +738,7 @@
                 renderUI();
             }, (error) => {
                 console.error("Live collections fetch failed: ", error);
-                triggerToast("Cloud synchronisation sync error.", "error");
+                triggerToast("Cloud integration configuration incomplete.", "error");
             });
 
             // Listen to Agents
@@ -1569,10 +1571,13 @@
             let savedConfig = localStorage.getItem('sgnccs_firebase_config');
             if (savedConfig) {
                 dbConfigInput.value = savedConfig;
-            } else if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                dbConfigInput.value = JSON.stringify(JSON.parse(__firebase_config), null, 2);
             } else {
-                dbConfigInput.value = '';
+                const globalConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : (typeof window !== 'undefined' && window.__firebase_config ? window.__firebase_config : null);
+                if (globalConfig) {
+                    dbConfigInput.value = typeof globalConfig === 'string' ? JSON.stringify(JSON.parse(globalConfig), null, 2) : JSON.stringify(globalConfig, null, 2);
+                } else {
+                    dbConfigInput.value = '';
+                }
             }
             dbSetupModal.classList.remove('hidden');
         });
