@@ -84,11 +84,11 @@
                 <div class="h-1 w-12 bg-sgn-gold mx-auto mt-4 rounded-full"></div>
             </div>
 
-            <!-- Database connection alert indicator -->
+            <!-- Database Connection Alert Indicator -->
             <div id="db-status-login-badge" class="mb-5 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs flex items-center justify-between">
                 <span class="text-slate-500 font-semibold">Database Sync:</span>
                 <span id="db-status-label" class="font-bold text-slate-700 flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span> Connecting to Cloud...
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Connecting to Cloud...
                 </span>
             </div>
 
@@ -143,7 +143,7 @@
             <div class="space-y-4">
                 <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center text-sm">
                     <span class="text-slate-500 font-semibold">Your Agent Code:</span>
-                    <span id="agent-modal-code-badge" class="font-extrabold bg-sgn-goldlight text-sgn-gold px-2.5 py-1 rounded-lg border border-amber-200">AG01</span>
+                    <span id="agent-modal-code-badge" class="font-extrabold bg-sgn-goldlight text-sgn-gold px-2.5 py-1 rounded-lg border border-amber-200">AG07</span>
                 </div>
                 <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center text-sm">
                     <span class="text-slate-500 font-semibold">Collection Date:</span>
@@ -158,43 +158,6 @@
                 <button id="btn-confirm-open-day" class="w-full bg-sgn-accent hover:bg-blue-850 text-white font-bold py-3 rounded-xl shadow-lg shadow-blue-900/15 transition-all">
                     Authorize & Open Day
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- FIREBASE CLOUD SETUP MODAL (FOR DEPLOYMENTS WITHOUT BUILD ENVIRONMENT VARIABLES) -->
-    <div id="db-setup-modal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-fade-in border border-slate-100">
-            <div class="flex justify-between items-center mb-4 pb-2 border-b">
-                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <svg class="w-5 h-5 text-sgn-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Multi-Device Live Database Setup
-                </h3>
-                <button id="btn-close-db-modal" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
-            </div>
-            <p class="text-slate-500 text-xs mb-4">Paste your Firebase Project Web Configuration JSON block below to instantly link multiple devices globally across Netlify deployments.</p>
-            
-            <div class="space-y-4">
-                <div>
-                    <label for="db-config-input" class="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Firebase Configuration Object</label>
-                    <textarea id="db-config-input" rows="8" placeholder='{&#10;  "apiKey": "...",&#10;  "authDomain": "...",&#10;  "projectId": "...",&#10;  "storageBucket": "...",&#10;  "messagingSenderId": "...",&#10;  "appId": "..."&#10;}' class="w-full p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent font-mono text-xs bg-slate-50"></textarea>
-                </div>
-
-                <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 leading-relaxed">
-                    <strong>Note:</strong> Configuration parameters are stored securely inside your client-side browser space. Re-entering this on new device browsers links them instantly to the same shared directory.
-                </div>
-
-                <div class="flex justify-end gap-3">
-                    <button id="btn-clear-db-config" class="px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 border border-transparent rounded-xl transition-all">
-                        Reset Connection
-                    </button>
-                    <button id="btn-save-db-config" class="bg-sgn-accent hover:bg-blue-850 text-white font-bold px-5 py-2 rounded-xl text-xs transition-all">
-                        Initialize Live Cloud Sync
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -228,17 +191,9 @@
                         <div class="text-sm font-bold flex items-center gap-2 text-white mt-0.5">
                             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse border border-emerald-500/50"></span>
                             <span id="display-user-role" class="text-slate-300">Role</span>: <span id="display-user-name" class="text-amber-500 font-extrabold">User</span>
-                            <span id="display-agent-code-pill" class="hidden text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded font-mono font-bold ml-1">AG01</span>
+                            <span id="display-agent-code-pill" class="hidden text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded font-mono font-bold ml-1">AG07</span>
                         </div>
                     </div>
-                    
-                    <!-- Admin database parameters configuration trigger -->
-                    <button id="btn-trigger-db-config" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-3 py-2.5 rounded-xl border border-slate-750 transition-all flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        </svg>
-                        Cloud Link
-                    </button>
 
                     <button id="btn-logout" class="bg-red-500 hover:bg-red-600 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-lg shadow-red-500/15 transition-all flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -306,7 +261,7 @@
                             <div>
                                 <label for="entry-date" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Collection Date</label>
                                 <input type="date" id="entry-date" required
-                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-800 font-semibold transition-colors bg-slate-50">
+                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-855 font-semibold transition-colors bg-slate-50">
                                 <p id="agent-date-warning" class="text-[10px] text-amber-600 mt-1.5 hidden font-medium flex items-center gap-1">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0-6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                                     Restricted to Today's date (Agent lock).
@@ -398,7 +353,7 @@
                                     <span id="dot-pulse-indicator" class="relative inline-flex rounded-full h-2 w-2 bg-slate-400"></span>
                                 </span>
                             </div>
-                            <p class="text-slate-500 text-xs mt-0.5">Streamed live across cooperative credit channels</p>
+                            <p class="text-slate-550 text-xs mt-0.5">Streamed live across cooperative credit channels</p>
                         </div>
                         <div class="flex items-center gap-3">
                             <!-- Filter by Agent (Admin Only) -->
@@ -445,13 +400,13 @@
                             <div>
                                 <label for="agent-username" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Agent Username <span class="text-red-500 font-bold">*</span></label>
                                 <input type="text" id="agent-username" required placeholder="e.g., Harpreet"
-                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-800 font-semibold transition-colors bg-slate-50">
+                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-850 font-semibold transition-colors bg-slate-50">
                             </div>
 
                             <div>
                                 <label for="agent-password" class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Set Password <span class="text-red-500 font-bold">*</span></label>
                                 <input type="password" id="agent-password" required placeholder="••••••••"
-                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-800 font-semibold transition-colors bg-slate-50">
+                                    class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-850 font-semibold transition-colors bg-slate-50">
                             </div>
 
                             <div>
@@ -511,13 +466,18 @@
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global App details 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : (typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'sgnccs-daily-tracker-live');
+        // Global App details
+        // Automatically utilize the runtime workspace ID. Fallback to general branch ID.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : (typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'sgnccs-shared-branch');
         
         let db = null;
         let auth = null;
         let isFirebaseActive = false;
         let activeUser = null; // Rule 3 Authenticated User Reference
+
+        // Unsubscribe handles for live Firestore snapshot streams to prevent memory leaks during workspace switching
+        let unsubscribeCollections = null;
+        let unsubscribeAgents = null;
 
         // Default local memory fallback arrays
         let collections = [];
@@ -584,13 +544,6 @@
         const btnExportBackup = document.getElementById('btn-export-backup');
         const importBackupFile = document.getElementById('import-backup-file');
 
-        // Cloud Link parameters configuration
-        const dbSetupModal = document.getElementById('db-setup-modal');
-        const btnTriggerDbConfig = document.getElementById('btn-trigger-db-config');
-        const btnCloseDbModal = document.getElementById('btn-close-db-modal');
-        const btnSaveDbConfig = document.getElementById('btn-save-db-config');
-        const btnClearDbConfig = document.getElementById('btn-clear-db-config');
-        const dbConfigInput = document.getElementById('db-config-input');
         const dbStatusLabel = document.getElementById('db-status-label');
         const headerSyncStatus = document.getElementById('header-sync-status');
         const pingPulseIndicator = document.getElementById('ping-pulse-indicator');
@@ -638,26 +591,34 @@
             return `${yyyy}-${mm}-${dd}`;
         }
 
+        // Auto-seed the system with Shakti Gupta's profile if not already present
+        async function autoSeedShaktiGupta() {
+            const shaktiName = "Shakti Gupta";
+            const shaktiPass = "07Shakti";
+            const shaktiCode = "AG07"; // Updated default code configuration from AG01 to AG07
+
+            const hasShakti = agents.some(a => a.username.toLowerCase() === shaktiName.toLowerCase());
+            if (!hasShakti) {
+                const shaktiAgent = {
+                    username: shaktiName,
+                    password: shaktiPass,
+                    agentCode: shaktiCode
+                };
+                await commitAgentRecord(shaktiAgent);
+            }
+        }
+
         // Initialize Firebase connection (Rule 3 prioritizes authentication before running queries)
         async function initializeStorage() {
-            // Check for configuration saved inside localStorage or provided inside global parameters
-            let savedConfig = localStorage.getItem('sgnccs_firebase_config');
+            // Check for configuration saved inside environment parameters at runtime (zero user config)
             let configToUse = null;
-
-            if (savedConfig) {
+            const globalConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : (typeof window !== 'undefined' && window.__firebase_config ? window.__firebase_config : null);
+            
+            if (globalConfig) {
                 try {
-                    configToUse = JSON.parse(savedConfig);
+                    configToUse = typeof globalConfig === 'string' ? JSON.parse(globalConfig) : globalConfig;
                 } catch (e) {
-                    console.error("Parsed local configuration corrupt");
-                }
-            } else {
-                const globalConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : (typeof window !== 'undefined' && window.__firebase_config ? window.__firebase_config : null);
-                if (globalConfig) {
-                    try {
-                        configToUse = typeof globalConfig === 'string' ? JSON.parse(globalConfig) : globalConfig;
-                    } catch (e) {
-                        console.error("Global parameters corrupt");
-                    }
+                    console.error("Global parameters corrupt");
                 }
             }
 
@@ -671,9 +632,22 @@
                     const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : (typeof window !== 'undefined' && window.__initial_auth_token ? window.__initial_auth_token : null);
                     
                     if (token) {
-                        await signInWithCustomToken(auth, token);
+                        const credential = await signInWithCustomToken(auth, token);
+                        activeUser = credential.user;
                     } else {
-                        await signInAnonymously(auth);
+                        const credential = await signInAnonymously(auth);
+                        activeUser = credential.user;
+                    }
+
+                    // Strict Guard validation before subscribing to snapshots (Rule 3)
+                    if (activeUser) {
+                        isFirebaseActive = true;
+                        updateSyncStatusUI(true);
+                        listenToLiveSync();
+                    } else {
+                        isFirebaseActive = false;
+                        updateSyncStatusUI(false);
+                        loadLocalFallback();
                     }
 
                     onAuthStateChanged(auth, (user) => {
@@ -681,7 +655,6 @@
                             activeUser = user;
                             isFirebaseActive = true;
                             updateSyncStatusUI(true);
-                            listenToLiveSync();
                         } else {
                             activeUser = null;
                             isFirebaseActive = false;
@@ -724,12 +697,22 @@
         function listenToLiveSync() {
             if (!isFirebaseActive || !activeUser || !auth.currentUser) return;
 
+            // Unsubscribe existing listeners if active to prevent overlapping sync threads
+            if (unsubscribeCollections) {
+                unsubscribeCollections();
+                unsubscribeCollections = null;
+            }
+            if (unsubscribeAgents) {
+                unsubscribeAgents();
+                unsubscribeAgents = null;
+            }
+
             // Rule 1 Strict Path bindings
             const publicCollectionsRef = collection(db, 'artifacts', appId, 'public', 'data', 'collections');
             const publicAgentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'agents');
 
             // Listen to collections
-            onSnapshot(publicCollectionsRef, (snapshot) => {
+            unsubscribeCollections = onSnapshot(publicCollectionsRef, (snapshot) => {
                 const liveList = [];
                 snapshot.forEach(doc => {
                     liveList.push({ id: doc.id, ...doc.data() });
@@ -738,11 +721,10 @@
                 renderUI();
             }, (error) => {
                 console.error("Live collections fetch failed: ", error);
-                triggerToast("Cloud integration configuration incomplete.", "error");
             });
 
             // Listen to Agents
-            onSnapshot(publicAgentsRef, (snapshot) => {
+            unsubscribeAgents = onSnapshot(publicAgentsRef, (snapshot) => {
                 const liveAgents = [];
                 snapshot.forEach(doc => {
                     liveAgents.push({ id: doc.id, ...doc.data() });
@@ -929,13 +911,11 @@
             loginContainer.classList.remove('hidden');
             mainApp.classList.add('hidden');
             dayOpenModal.classList.add('hidden');
-            btnTriggerDbConfig.classList.add('hidden');
         }
 
         function renderAppLayout() {
             loginContainer.classList.add('hidden');
             mainApp.classList.remove('hidden');
-            btnTriggerDbConfig.classList.remove('hidden');
 
             displayUserName.textContent = currentUser.username;
             displayUserRole.textContent = currentUser.role.toUpperCase();
@@ -999,7 +979,7 @@
                 const select = document.createElement('select');
                 select.id = "entry-agent-code";
                 select.required = true;
-                select.className = "w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-850 transition-colors font-mono font-bold bg-slate-50";
+                select.className = "w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-sgn-accent focus:border-sgn-accent text-slate-855 transition-colors font-mono font-bold bg-slate-50";
                 
                 const optAdmin = document.createElement('option');
                 optAdmin.value = "ADMIN";
@@ -1564,63 +1544,6 @@
             };
             fileReader.readAsText(e.target.files[0]);
             importBackupFile.value = '';
-        });
-
-        // Setup settings button modal triggers
-        btnTriggerDbConfig.addEventListener('click', () => {
-            let savedConfig = localStorage.getItem('sgnccs_firebase_config');
-            if (savedConfig) {
-                dbConfigInput.value = savedConfig;
-            } else {
-                const globalConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : (typeof window !== 'undefined' && window.__firebase_config ? window.__firebase_config : null);
-                if (globalConfig) {
-                    dbConfigInput.value = typeof globalConfig === 'string' ? JSON.stringify(JSON.parse(globalConfig), null, 2) : JSON.stringify(globalConfig, null, 2);
-                } else {
-                    dbConfigInput.value = '';
-                }
-            }
-            dbSetupModal.classList.remove('hidden');
-        });
-
-        btnCloseDbModal.addEventListener('click', () => {
-            dbSetupModal.classList.add('hidden');
-        });
-
-        btnSaveDbConfig.addEventListener('click', async () => {
-            const val = dbConfigInput.value.trim();
-            if (!val) {
-                triggerToast("Configuration text is empty.", "error");
-                return;
-            }
-            try {
-                const parsed = JSON.parse(val);
-                if (!parsed.apiKey || !parsed.projectId) {
-                    triggerToast("Invalid parameters. Missing apiKey or projectId.", "error");
-                    return;
-                }
-                localStorage.setItem('sgnccs_firebase_config', JSON.stringify(parsed));
-                triggerToast("Connection properties saved. Restarting sync stream...", "success");
-                dbSetupModal.classList.add('hidden');
-                
-                // Reboot live database
-                await initializeStorage();
-            } catch (err) {
-                triggerToast("Invalid JSON markup syntax.", "error");
-            }
-        });
-
-        btnClearDbConfig.addEventListener('click', async () => {
-            localStorage.removeItem('sgnccs_firebase_config');
-            triggerToast("Connection parameters cleared. Reverting to local fallback mode.", "success");
-            dbSetupModal.classList.add('hidden');
-            
-            // Re-boot local parameters
-            db = null;
-            auth = null;
-            isFirebaseActive = false;
-            activeUser = null;
-            updateSyncStatusUI(false);
-            loadLocalFallback();
         });
 
         // Bootstrap on core load
